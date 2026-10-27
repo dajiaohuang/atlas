@@ -32,12 +32,13 @@ var (
 		`{{ range $c := rev .Changes }}{{ with $stmts := .ReverseStmts }}{{ with $c.Comment }}-- reverse: {{ println . }}{{ end }}{{ range $stmts }}{{ printf "%s;\n" . }}{{ end }}{{ end }}{{ end }}`,
 	)
 	// GooseFormatter returns migrate.Formatter compatible with pressly/goose.
+	// It omits the Down section when the plan is not fully reversible.
 	GooseFormatter = templateFormatter(
 		"{{ now }}{{ with .Name }}_{{ . }}{{ end }}.sql",
 		`-- +goose Up
-{{ range .Changes }}{{ with .Comment }}-- {{ println . }}{{ end }}{{ printf "%s;\n" .Cmd }}{{ end }}
+{{ range .Changes }}{{ with .Comment }}-- {{ println . }}{{ end }}{{ printf "%s;\n" .Cmd }}{{ end }}{{ if .Reversible }}
 -- +goose Down
-{{ range $c := rev .Changes }}{{ with $stmts := .ReverseStmts }}{{ with $c.Comment }}-- reverse: {{ println . }}{{ end }}{{ range $stmts }}{{ printf "%s;\n" . }}{{ end }}{{ end }}{{ end }}`,
+{{ range $c := rev .Changes }}{{ with $stmts := .ReverseStmts }}{{ with $c.Comment }}-- reverse: {{ println . }}{{ end }}{{ range $stmts }}{{ printf "%s;\n" . }}{{ end }}{{ end }}{{ end }}{{ end }}`,
 	)
 	// FlywayFormatter returns migrate.Formatter compatible with Flyway.
 	FlywayFormatter = templateFormatter(

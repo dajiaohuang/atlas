@@ -158,6 +158,25 @@ DROP TABLE t1 IF EXISTS;
 	}
 }
 
+func TestGooseFormatterOmitsIrreversibleDown(t *testing.T) {
+	d := dir(t)
+	pl := migrate.NewPlanner(nil, d, migrate.PlanFormat(sqltool.GooseFormatter), migrate.PlanWithChecksum(false))
+	require.NoError(t, pl.WritePlan(&migrate.Plan{
+		Name:       "sqlite-rebuild",
+		Reversible: false,
+		Changes: []*migrate.Change{{
+			Cmd:     "CREATE TABLE `new_users` (`id` integer NOT NULL)",
+			Reverse: "DROP TABLE `new_users`",
+		}},
+	}))
+	entries, err := fs.ReadDir(d, "")
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	got, err := fs.ReadFile(d, entries[0].Name())
+	require.NoError(t, err)
+	require.Equal(t, "-- +goose Up\nCREATE TABLE `new_users` (`id` integer NOT NULL);\n", string(got))
+}
+
 func TestScanners(t *testing.T) {
 	for _, tt := range []struct {
 		name                   string
